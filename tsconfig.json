@@ -16,10 +16,12 @@
     "sourceMap": true,
     "declaration": true,
     "declarationMap": true,
+    "emitDeclarationOnly": true,
 
     // Stricter Typechecking Options
     "noUncheckedIndexedAccess": true,
     "exactOptionalPropertyTypes": true,
+    "allowImportingTsExtensions": true,
 
     // Style Options
     "noImplicitReturns": true,
