@@ -22,6 +22,12 @@ export const db = drizzle(process.env.DB_URL!);
 export const fastify: FastifyInstance = Fastify({
   logger: loggerConfig[NODE_ENV] ?? true,
   disableRequestLogging: NODE_ENV === 'development',
+  ajv: {
+    customOptions: {
+      allErrors: true,
+      removeAdditional: false,
+    },
+  },
 });
 
 //Register routes

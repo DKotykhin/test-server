@@ -29,6 +29,28 @@ class UserController {
     }
   }
 
+  async confirmPassword(req: FastifyRequest<{ Params: { id: string }; Body: { password: string } }>, res: FastifyReply) {
+    try {
+      const userId = req.params.id;
+      const { password } = req.body;
+      const isMatch = await UserService.confirmPassword(userId, password);
+      res.status(200).send({ isMatch });
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async updatePassword(req: FastifyRequest<{ Params: { id: string }; Body: { newPassword: string } }>, res: FastifyReply) {
+    try {
+      const userId = req.params.id;
+      const { newPassword } = req.body;
+      await UserService.updatePassword(userId, newPassword);
+      res.status(200).send({ message: 'Password updated successfully' });
+    } catch (error) {
+      throw error;
+    }
+  }
+
   async updateUser(req: FastifyRequest<{ Params: { id: string }; Body: UserUpdate }>, res: FastifyReply) {
     try {
       const userId = req.params.id;

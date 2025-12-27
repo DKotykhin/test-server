@@ -86,9 +86,9 @@ class UserService {
     }
   }
 
-  static async confirmPassword(email: string, password: string): Promise<boolean> {
+  static async confirmPassword(id: string, password: string): Promise<boolean> {
     try {
-      const user = await db.select().from(usersTable).where(eq(usersTable.email, email)).limit(1);
+      const user = await db.select().from(usersTable).where(eq(usersTable.id, id)).limit(1);
       if (user?.length === 0 || !user[0]) {
         return false;
       }
@@ -99,13 +99,13 @@ class UserService {
     }
   }
 
-  static async updatePassword(email: string, newPassword: string): Promise<void> {
+  static async updatePassword(id: string, newPassword: string): Promise<void> {
     try {
       const passwordHash = await PasswordHash.hashPassword(newPassword);
       await db
         .update(usersTable)
         .set({ passwordHash, updatedAt: new Date() })
-        .where(eq(usersTable.email, email));
+        .where(eq(usersTable.id, id));
     } catch (error) {
       throw ApiError.badRequest('Failed to update password');
     }
