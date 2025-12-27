@@ -6,7 +6,7 @@ import type { UserCreate } from '../users/userTypes.ts';
 export const userRoute = async (fastify: FastifyInstance) => {
   const userController = new UserController();
 
-  fastify.get(
+  fastify.get<{ Params: { id: string } }>(
     '/user/:id',
     {
       schema: {
@@ -19,8 +19,8 @@ export const userRoute = async (fastify: FastifyInstance) => {
         },
       },
     },
-    async (req: any, res: any) => {
-      return userController.getUser(req, res);
+    async (request, reply) => {
+      return userController.getUser(request, reply);
     }
   );
 
@@ -41,8 +41,8 @@ export const userRoute = async (fastify: FastifyInstance) => {
         },
       },
     },
-    async (req, reply) => {
-      return userController.createUser(req, reply);
+    async (request, reply) => {
+      return userController.createUser(request, reply);
     }
   );
 
@@ -149,7 +149,7 @@ export const userRoute = async (fastify: FastifyInstance) => {
     }
   );
 
-  fastify.delete(
+  fastify.delete<{ Params: { id: string } }>(
     '/user/:id',
     {
       schema: {
@@ -162,8 +162,8 @@ export const userRoute = async (fastify: FastifyInstance) => {
         },
       },
     },
-    async (req: any, res: any) => {
-      return userController.deleteUser(req, res);
+    async (request, reply) => {
+      return userController.deleteUser(request, reply);
     }
   );
 };
