@@ -1,24 +1,16 @@
 import type { FastifyInstance } from 'fastify';
 
-import UserController from '../users/userController.js';
+import { UserController } from '../users/userController.js';
+import { UserSchema } from '../validation/userSchema.ts';
 import type { UserCreate } from '../users/userTypes.ts';
 
 export const userRoute = async (fastify: FastifyInstance) => {
   const userController = new UserController();
+  const userSchema = new UserSchema();
 
   fastify.get<{ Params: { id: string } }>(
     '/user/:id',
-    {
-      schema: {
-        params: {
-          type: 'object',
-          properties: {
-            id: { type: 'string', format: 'uuid' },
-          },
-          required: ['id'],
-        },
-      },
-    },
+    { schema: userSchema.getUserById() },
     async (request, reply) => {
       return userController.getUser(request, reply);
     }
@@ -26,21 +18,7 @@ export const userRoute = async (fastify: FastifyInstance) => {
 
   fastify.post<{ Body: UserCreate }>(
     '/user/create',
-    {
-      schema: {
-        body: {
-          type: 'object',
-          properties: {
-            name: { type: 'string' },
-            email: { type: 'string', format: 'email' },
-            password: { type: 'string', minLength: 6 },
-            avatarUrl: { type: 'string', format: 'uri' },
-          },
-          required: ['name', 'email', 'password'],
-          additionalProperties: false
-        },
-      },
-    },
+    { schema: userSchema.createUser() },
     async (request, reply) => {
       return userController.createUser(request, reply);
     }

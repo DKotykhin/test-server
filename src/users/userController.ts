@@ -1,7 +1,7 @@
 import type { FastifyReply, FastifyRequest } from 'fastify';
 
-import ApiError from '../utils/apiError.ts';
-import UserService from './userService.js';
+import { ApiError } from '../utils/apiError.ts';
+import { UserService } from './userService.js';
 import type { UserCreate, UserUpdate } from './userTypes.ts';
 
 class UserController {
@@ -79,4 +79,4 @@ class UserController {
   }
 }
 
-export default UserController;
+export { UserController };

@@ -2,7 +2,7 @@ import { eq } from 'drizzle-orm';
 import type { QueryResult } from 'pg';
 
 import { db } from '../server.js';
-import ApiError from '../utils/apiError.ts';
+import { ApiError } from '../utils/apiError.ts';
 import { usersTable, type User } from '../db/schema/users.js';
 import { PasswordHash } from '../utils/passwordHash.ts';
 import type { UserCreate, UserUpdate } from './userTypes.ts';
@@ -14,8 +14,8 @@ class UserService {
       if (user?.length === 0 || !user[0]) {
         return null;
       }
-      const { passwordHash, ...userWithoutPasswordHash } = user[0];
-      return userWithoutPasswordHash;
+      
+      return user[0];
     } catch (error) {
       throw ApiError.badRequest('Failed to get user by ID');
     }
@@ -124,4 +124,4 @@ class UserService {
   }
 }
 
-export default UserService;
+export { UserService };

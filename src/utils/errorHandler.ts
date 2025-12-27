@@ -1,4 +1,4 @@
-import ApiError from './apiError.ts';
+import { ApiError } from './apiError.ts';
 
 export function errorHandler(error: any, res: any) {
   if (error instanceof ApiError) {
