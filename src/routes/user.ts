@@ -1,7 +1,7 @@
 import type { FastifyInstance } from 'fastify';
 
 import UserController from '../users/userController.js';
-import type { UserData } from '../users/userTypes.ts';
+import type { UserCreate } from '../users/userTypes.ts';
 
 export const userRoute = async (fastify: FastifyInstance) => {
   const userController = new UserController();
@@ -24,7 +24,7 @@ export const userRoute = async (fastify: FastifyInstance) => {
     }
   );
 
-  fastify.post<{ Body: UserData }>(
+  fastify.post<{ Body: UserCreate }>(
     '/user/create',
     {
       schema: {
@@ -46,7 +46,27 @@ export const userRoute = async (fastify: FastifyInstance) => {
     }
   );
 
-  fastify.patch<{ Params: { id: string }; Body: { isEmailVerified: boolean } }>('/user/:id/verify-email', async (request, reply) => {
-    return userController.updateUserEmailVerification(request, reply);
+  fastify.patch<{ Params: { id: string }; Body: { isEmailVerified: boolean } }>(
+    '/user/:id/verify-email',
+    {
+      schema: {
+        params: {
+          type: 'object',
+          properties: {
+            id: { type: 'string', format: 'uuid' },
+          },
+          required: ['id'],
+        },
+        body: {
+          type: 'object',
+          properties: {
+            isEmailVerified: { type: 'boolean' },
+          },
+          required: ['isEmailVerified'],
+        },
+      },
+    },
+    async (request, reply) => {
+    return userController.updateUser(request, reply);
   });
 };

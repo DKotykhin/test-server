@@ -1,7 +1,8 @@
 import type { FastifyReply, FastifyRequest } from 'fastify';
+
 import ApiError from '../utils/apiError.ts';
 import UserService from './userService.js';
-import type { UserData } from './userTypes.ts';
+import type { UserCreate, UserUpdate } from './userTypes.ts';
 
 class UserController {
   async getUser(req: FastifyRequest<{ Params: { id: string } }>, res: FastifyReply) {
@@ -18,24 +19,40 @@ class UserController {
     }
   }
 
-  async createUser(req: FastifyRequest<{ Body: UserData }>, res: FastifyReply) {
+  async createUser(req: FastifyRequest<{ Body: UserCreate }>, res: FastifyReply) {
     try {
       const userData = req.body;
       const newUser = await UserService.createUser(userData);
       res.status(201).send(newUser);
     } catch (error: any) {
-      res.status(500).send({ message: error.message || 'Internal server error' });
+      throw error;
     }
   }
 
-  async updateUserEmailVerification(req: FastifyRequest<{ Params: { id: string }; Body: { isEmailVerified: boolean } }>, res: FastifyReply) {
+  async updateUser(req: FastifyRequest<{ Params: { id: string }; Body: UserUpdate }>, res: FastifyReply) {
     try {
       const userId = req.params.id;
-      const { isEmailVerified } = req.body;
-      const updatedUser = await UserService.updateUserEmailVerificationStatus(userId, isEmailVerified);
+      const updateData = req.body;
+      const updatedUser = await UserService.updateUser(userId, updateData);
+      if (!updatedUser) {
+        throw ApiError.notFound('User not found');
+      }
       res.status(200).send(updatedUser);
     } catch (error) {
-      res.status(500).send({ message: 'Internal server error' });
+      throw error;
+    }
+  }
+
+  async deleteUser(req: FastifyRequest<{ Params: { id: string } }>, res: FastifyReply) {
+    try {
+      const userId = req.params.id;
+      const deleteResult = await UserService.deleteUser(userId);
+      if (deleteResult.rowCount === 0) {
+        throw ApiError.notFound('User not found');
+      }
+      res.status(200).send({ message: 'User deleted successfully' });
+    } catch (error) {
+      throw error;
     }
   }
 }

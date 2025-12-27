@@ -1,56 +1,126 @@
 import { eq } from 'drizzle-orm';
+import type { QueryResult } from 'pg';
 
 import { db } from '../server.js';
-import { usersTable } from '../db/schema/users.js';
-import { PasswordHash } from '../utils/passwordHash.ts';
 import ApiError from '../utils/apiError.ts';
-import type { UserData } from './userTypes.ts';
+import { usersTable, type User } from '../db/schema/users.js';
+import { PasswordHash } from '../utils/passwordHash.ts';
+import type { UserCreate, UserUpdate } from './userTypes.ts';
 
 class UserService {
-  static async getUserById(userId: string) {
+  static async getUserById(userId: string): Promise<Omit<User, 'passwordHash'> | null> {
     try {
       const user = await db.select().from(usersTable).where(eq(usersTable.id, userId)).limit(1);
       if (user?.length === 0 || !user[0]) {
         return null;
       }
-      const { passwordHash, ...userWithoutPassword } = user[0];
-      return userWithoutPassword;
+      const { passwordHash, ...userWithoutPasswordHash } = user[0];
+      return userWithoutPasswordHash;
     } catch (error) {
       throw ApiError.badRequest('Failed to get user by ID');
     }
   }
 
-  static async getUserByEmail(email: string) {
-    const user = await db.select().from(usersTable).where(eq(usersTable.email, email)).limit(1);
-    if (user?.length === 0 || !user[0]) {
-      return null;
+  static async getUserByEmail(email: string): Promise<Omit<User, 'passwordHash'> | null> {
+    try {
+      const user = await db.select().from(usersTable).where(eq(usersTable.email, email)).limit(1);
+      if (user?.length === 0 || !user[0]) {
+        return null;
+      }
+      const { passwordHash, ...userWithoutPasswordHash } = user[0];
+      return userWithoutPasswordHash;
+    } catch (error) {
+      throw ApiError.badRequest('Failed to get user by email');
     }
-    const { passwordHash, ...userWithoutPassword } = user[0];
-    return userWithoutPassword;
   }
 
-  static async createUser(userData: UserData) {
-    const newUser = await db
-      .insert(usersTable)
-      .values({
-        ...userData,
-        passwordHash: await PasswordHash.hashPassword(userData.password),
-      })
-      .returning();
-    if (newUser?.length === 0 || !newUser[0]) {
-      throw new Error('Failed to create user');
+  static async createUser(userData: UserCreate): Promise<Omit<User, 'passwordHash'> | null> {
+    try {
+      const newUser = await db
+        .insert(usersTable)
+        .values({
+          ...userData,
+          passwordHash: await PasswordHash.hashPassword(userData.password),
+        })
+        .returning();
+      if (newUser?.length === 0 || !newUser[0]) {
+        throw new Error('Failed to create user');
+      }
+      const { passwordHash, ...userWithoutPasswordHash } = newUser[0];
+      return userWithoutPasswordHash;
+    } catch (error) {
+      throw ApiError.badRequest('Failed to create user');
     }
-    const { passwordHash, ...userWithoutPassword } = newUser[0];
-    return userWithoutPassword;
   }
 
-  static async updateUserEmailVerificationStatus(userId: string, isVerified: boolean) {
-    const [updatedUser] = await db
-      .update(usersTable)
-      .set({ isEmailVerified: isVerified, updatedAt: new Date() })
-      .where(eq(usersTable.id, userId))
-      .returning();
-    return updatedUser;
+  static async updateUser(userId: string, updateData: UserUpdate): Promise<Omit<User, 'passwordHash'> | null> {
+    try {
+      if (updateData.password) {
+        const passwordHash = await PasswordHash.hashPassword(updateData.password);
+        if (passwordHash) {
+          updateData.passwordHash = passwordHash;
+          delete updateData.password;
+        }
+      }
+      const [updatedUser] = await db
+        .update(usersTable)
+        .set({ ...updateData, updatedAt: new Date() })
+        .where(eq(usersTable.id, userId))
+        .returning();
+      if (!updatedUser) {
+        return null;
+      }
+      const { passwordHash, ...userWithoutPasswordHash } = updatedUser;
+      return userWithoutPasswordHash;
+    } catch (error) {
+      throw ApiError.badRequest('Failed to update user');
+    }
+  }
+
+  static async deleteUser(userId: string): Promise<QueryResult> {
+    try {
+      const deleteResult = await db.delete(usersTable).where(eq(usersTable.id, userId));
+      return deleteResult;
+    } catch (error) {
+      throw ApiError.badRequest('Failed to delete user');
+    }
+  }
+
+  static async confirmPassword(email: string, password: string): Promise<boolean> {
+    try {
+      const user = await db.select().from(usersTable).where(eq(usersTable.email, email)).limit(1);
+      if (user?.length === 0 || !user[0]) {
+        return false;
+      }
+      const isPasswordValid = await PasswordHash.comparePassword(password, user[0].passwordHash || '');
+      return isPasswordValid;
+    } catch (error) {
+      throw ApiError.badRequest('Failed to confirm password');
+    }
+  }
+
+  static async updatePassword(email: string, newPassword: string): Promise<void> {
+    try {
+      const passwordHash = await PasswordHash.hashPassword(newPassword);
+      await db
+        .update(usersTable)
+        .set({ passwordHash, updatedAt: new Date() })
+        .where(eq(usersTable.email, email));
+    } catch (error) {
+      throw ApiError.badRequest('Failed to update password');
+    }
+  }
+
+  static async isEmailVerified(email: string): Promise<boolean> {
+    try {
+      const user = await db.select().from(usersTable).where(eq(usersTable.email, email)).limit(1);
+      if (user?.length === 0 || !user[0]) {
+        throw ApiError.notFound('User not found');
+      }
+      return user[0].isEmailVerified || false;
+    } catch (error) {
+      throw ApiError.badRequest('Failed to check email verification status');
+    }
   }
 }
 
