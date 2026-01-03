@@ -2,33 +2,9 @@ import type { FastifyReply, FastifyRequest } from 'fastify';
 
 import { ApiError } from '../utils/apiError.ts';
 import { UserService } from './userService.js';
-import type { UserCreate, UserUpdate } from './userTypes.ts';
+import type { UserUpdate } from './userTypes.ts';
 
 class UserController {
-  async getUser(req: FastifyRequest<{ Params: { id: string } }>, res: FastifyReply) {
-    try {
-      const userId = req.params.id;
-      const user = await UserService.getUserById(userId);
-      if (user) {
-        res.status(200).send(user);
-      } else {
-        throw ApiError.notFound('User not found');
-      }
-    } catch (error: any) {
-      throw error;
-    }
-  }
-
-  async createUser(req: FastifyRequest<{ Body: UserCreate }>, res: FastifyReply) {
-    try {
-      const userData = req.body;
-      const newUser = await UserService.createUser(userData);
-      res.status(201).send(newUser);
-    } catch (error: any) {
-      throw error;
-    }
-  }
-
   async confirmPassword(req: FastifyRequest<{ Params: { id: string }; Body: { password: string } }>, res: FastifyReply) {
     try {
       const userId = req.params.id;
@@ -40,11 +16,11 @@ class UserController {
     }
   }
 
-  async updatePassword(req: FastifyRequest<{ Params: { id: string }; Body: { newPassword: string } }>, res: FastifyReply) {
+  async updatePassword(req: FastifyRequest<{ Params: { id: string }; Body: { password: string } }>, res: FastifyReply) {
     try {
       const userId = req.params.id;
-      const { newPassword } = req.body;
-      await UserService.updatePassword(userId, newPassword);
+      const { password } = req.body;
+      await UserService.updateUser(userId, { password });
       res.status(200).send({ message: 'Password updated successfully' });
     } catch (error) {
       throw error;
@@ -69,6 +45,7 @@ class UserController {
     try {
       const userId = req.params.id;
       const deleteResult = await UserService.deleteUser(userId);
+      // console.log('Delete result:', deleteResult);
       if (deleteResult.rowCount === 0) {
         throw ApiError.notFound('User not found');
       }

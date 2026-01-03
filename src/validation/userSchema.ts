@@ -1,50 +1,97 @@
+import { userProperties } from './_properties.ts';
+
 class UserSchema {
-  getUserById() {
+  // Common ID parameter schema
+  private idParam = {
+    type: 'object',
+    properties: {
+      id: { type: 'string', format: 'uuid' },
+    },
+    required: ['id'],
+  };
+
+  confirmPassword() {
     return {
-      params: {
+      summary: 'Confirm user password',
+      description: 'Check if the provided password matches the user\'s current password',
+      tags: ['User'],
+      params: this.idParam,
+      body: {
         type: 'object',
         properties: {
-          id: { type: 'string', format: 'uuid' },
+          password: { type: 'string' },
         },
-        required: ['id'],
+        required: ['password'],
+        additionalProperties: false,
       },
       response: {
         200: {
           type: 'object',
           properties: {
-            id: { type: 'string', format: 'uuid' },
-            name: { type: 'string' },
-            email: { type: 'string', format: 'email' },
-            avatarUrl: { type: 'string', format: 'uri' },
-            isEmailVerified: { type: 'boolean' },
+            isMatch: { type: 'boolean' },
           },
         },
       },
     };
   }
 
-  createUser() {
+  updateUserPassword() {
     return {
+      summary: 'Update user password',
+      description: 'Update the password for a specific user',
+      tags: ['User'],
+      params: this.idParam,
+      body: {
+        type: 'object',
+        properties: {
+          password: { type: 'string', minLength: 6 },
+        },
+        required: ['password'],
+        additionalProperties: false,
+      },
+      response: {
+        200: {
+          type: 'object',
+          properties: userProperties,
+        },
+      },
+    };
+  }
+
+  updateUserName() {
+    return {
+      summary: 'Update user name',
+      description: 'Update the name of a specific user',
+      tags: ['User'],
+      params: this.idParam,
       body: {
         type: 'object',
         properties: {
           name: { type: 'string' },
-          email: { type: 'string', format: 'email' },
-          password: { type: 'string', minLength: 6 },
-          avatarUrl: { type: 'string', format: 'uri' },
         },
-        required: ['name', 'email', 'password'],
+        required: ['name'],
         additionalProperties: false,
       },
       response: {
-        201: {
+        200: {
+          type: 'object',
+          properties: userProperties,
+        },
+      },
+    };
+  }
+
+  deleteUser() {
+    return {
+      summary: 'Delete user',
+      description: 'Delete a user by their unique ID',
+      tags: ['User'],
+      params: this.idParam,
+      response: {
+        200: {
           type: 'object',
           properties: {
-            id: { type: 'string', format: 'uuid' },
-            name: { type: 'string' },
-            email: { type: 'string', format: 'email' },
-            avatarUrl: { type: 'string', format: 'uri' },
-            isEmailVerified: { type: 'boolean' },
+            message: { type: 'string' },
           },
         },
       },

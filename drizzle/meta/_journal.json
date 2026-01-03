@@ -15,6 +15,13 @@
       "when": 1766789370901,
       "tag": "0001_calm_ozymandias",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1767461390457,
+      "tag": "0002_nappy_eddie_brock",
+      "breakpoints": true
     }
   ]
 }
