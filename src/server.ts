@@ -3,7 +3,7 @@ import { drizzle } from 'drizzle-orm/node-postgres';
 import fastifySwagger from '@fastify/swagger';
 import fastifySwaggerUI from '@fastify/swagger-ui';
 import jwt from '@fastify/jwt';
-import cookie from '@fastify/cookie'
+import cookie from '@fastify/cookie';
 
 //routes
 import { healthRoute } from './routes/health.ts';
@@ -21,14 +21,6 @@ const NODE_ENV: 'development' | 'production' | 'test' = ['development', 'product
   : 'development';
 
 // Initialize Postgres connection
-try {
-  if (!process.env.DB_URL) {
-    throw new Error('DB_URL is not defined in environment variables');
-  }
-} catch (error) {
-  console.error('Failed to initialize database connection:', error);
-  process.exit(1);
-}
 export const db = drizzle(process.env.DB_URL!);
 
 // Create Fastify instance
@@ -46,10 +38,13 @@ export const fastify: FastifyInstance = Fastify({
 // check db connection
 fastify.addHook('onReady', async () => {
   try {
+    if (!process.env.DB_URL) {
+      throw new Error('DB_URL is not defined in environment variables');
+    }
     await db.execute(`SELECT 1`);
     fastify.log.info('Database connection established successfully.');
   } catch (error) {
-    fastify.log.error('Failed to connect to the database');
+    fastify.log.error(error instanceof Error ? error.message : 'Failed to connect to the database');
     process.exit(1);
   }
 });
@@ -71,9 +66,9 @@ await fastify.register(fastifySwagger, {
     info: {
       title: 'My API',
       description: 'Fastify Swagger API',
-      version: '1.0.0'
-    }
-  }
+      version: '1.0.0',
+    },
+  },
 });
 
 // Swagger UI
@@ -81,8 +76,8 @@ await fastify.register(fastifySwaggerUI, {
   routePrefix: '/docs',
   uiConfig: {
     docExpansion: 'list',
-    deepLinking: true
-  }
+    deepLinking: true,
+  },
 });
 
 //Register routes
@@ -94,6 +89,7 @@ fastify.register(authRoute);
 fastify.register(async (instance) => {
   instance.setErrorHandler((error, res) => {
     errorHandler(error, res);
+    fastify.log.error(`Global Error Handler: ${error instanceof Error ? error.message : String(error)}`);
   });
 });
 

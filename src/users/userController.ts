@@ -1,5 +1,6 @@
 import type { FastifyReply, FastifyRequest } from 'fastify';
 
+import { fastify } from '../server.ts';
 import { ApiError } from '../utils/apiError.ts';
 import { UserService } from './userService.js';
 import type { UserUpdate } from './userTypes.ts';
@@ -12,6 +13,7 @@ class UserController {
       const isMatch = await UserService.confirmPassword(userId, password);
       res.status(200).send({ isMatch });
     } catch (error) {
+      fastify.log.error(`ConfirmPassword Error: ${error instanceof Error ? error.message : String(error)}`);
       throw error;
     }
   }
@@ -23,6 +25,7 @@ class UserController {
       await UserService.updateUser(userId, { password });
       res.status(200).send({ message: 'Password updated successfully' });
     } catch (error) {
+      fastify.log.error(`UpdatePassword Error: ${error instanceof Error ? error.message : String(error)}`);
       throw error;
     }
   }
@@ -37,6 +40,7 @@ class UserController {
       }
       res.status(200).send(updatedUser);
     } catch (error) {
+      fastify.log.error(`UpdateUser Error: ${error instanceof Error ? error.message : String(error)}`);
       throw error;
     }
   }
@@ -51,6 +55,7 @@ class UserController {
       }
       res.status(200).send({ message: 'User deleted successfully' });
     } catch (error) {
+      fastify.log.error(`DeleteUser Error: ${error instanceof Error ? error.message : String(error)}`);
       throw error;
     }
   }

@@ -10,9 +10,11 @@ export async function mailSender({ to, name, token }: { to: string; name: string
   const key = process.env.EMAIL_API_KEY;
 
   if (!key) {
+    fastify.log.error('API_KEY is not defined');
     throw ApiError.internal('API_KEY is not defined');
   }
   if (!emailDomain) {
+    fastify.log.error('EMAIL_DOMAIN is not defined');
     throw ApiError.internal('EMAIL_DOMAIN is not defined');
   }
 
@@ -38,6 +40,7 @@ export async function mailSender({ to, name, token }: { to: string; name: string
 
     fastify.log.info(`Email sent to ${to}: ${data.message}`);
   } catch (error) {
+    fastify.log.error(`Failed to send email to ${to}: ${error instanceof Error ? error.message : String(error)}`);
     throw ApiError.internal(error instanceof Error ? error.message : 'Failed to send email');
   }
 }

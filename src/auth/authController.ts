@@ -1,5 +1,6 @@
 import type { FastifyReply, FastifyRequest } from 'fastify';
 
+import { fastify } from '../server.ts';
 import { ApiError } from '../utils/apiError.ts';
 import { AuthService } from './authService.ts';
 
@@ -20,6 +21,7 @@ class AuthController {
         throw ApiError.notFound('User not found');
       }
     } catch (error: any) {
+      fastify.log.error(`GetUserById Error: ${error instanceof Error ? error.message : String(error)}`);
       throw error;
     }
   }
@@ -30,6 +32,7 @@ class AuthController {
       await AuthService.signUp({ name, email, password });
       res.status(201).send({ message: 'User registered successfully. Please check your email to verify your account.' });
     } catch (error: any) {
+      fastify.log.error(`SignUp Error: ${error instanceof Error ? error.message : String(error)}`);
       throw error;
     }
   }
@@ -40,6 +43,7 @@ class AuthController {
       await AuthService.verifyEmail(token);
       res.status(200).send({ message: 'Email verified successfully' });
     } catch (error: any) {
+      fastify.log.error(`VerifyEmail Error: ${error instanceof Error ? error.message : String(error)}`);
       throw error;
     }
   }
@@ -54,6 +58,7 @@ class AuthController {
 
       return user;
     } catch (error: any) {
+      fastify.log.error(`SignIn Error: ${error instanceof Error ? error.message : String(error)}`);
       throw error;
     }
   }
