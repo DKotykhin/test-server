@@ -89,6 +89,30 @@ class AuthSchema {
       },
     };
   }
+
+  resendVerificationEmail() {
+    return {
+      summary: 'Resend verification email',
+      description: 'Resend the email verification link to the user',
+      tags: ['Auth'],
+      body: {
+        type: 'object',
+        properties: {
+          email: { type: 'string', format: 'email' },
+        },
+        required: ['email'],
+        additionalProperties: false,
+      },
+      response: {
+        200: {
+          type: 'object',
+          properties: {
+            message: { type: 'string' },
+          },
+        },
+      },
+    };
+  }
 }
 
 export { AuthSchema };

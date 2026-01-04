@@ -146,6 +146,38 @@ class AuthService {
       throw ApiError.badRequest(error instanceof Error ? error.message : 'Failed to verify email');
     }
   }
+
+  static async resendVerificationEmail(email: string): Promise<void> {
+    try {
+      const user = await db.select().from(usersTable).where(eq(usersTable.email, email)).limit(1);
+      if (user?.length === 0 || !user[0]) {
+        throw ApiError.notFound('User with this email does not exist');
+      }
+      if (user[0].isEmailVerified) {
+        throw ApiError.badRequest('Email is already verified');
+      }
+      const token = this.cryptoToken();
+      await mailSender({ to: user[0].email, name: user[0].name, token });
+      const emailVerification = await db.select().from(emailVerifications).where(eq(emailVerifications.userId, user[0].id)).limit(1);
+      if (emailVerification?.length === 0 || !emailVerification[0]) {
+        await db.insert(emailVerifications).values({
+          userId: user[0].id,
+          token,
+          expiresAt: new Date(Date.now() + 60 * 60 * 1000), // 1 hour expiration
+        });
+      } else {
+        await db
+          .update(emailVerifications)
+          .set({
+            token,
+            expiresAt: new Date(Date.now() + 60 * 60 * 1000), // 1 hour expiration
+          })
+          .where(eq(emailVerifications.userId, user[0].id));
+      }
+    } catch (error) {
+      throw ApiError.badRequest(error instanceof Error ? error.message : 'Failed to resend verification email');
+    }
+  }
 }
 
 export { AuthService };

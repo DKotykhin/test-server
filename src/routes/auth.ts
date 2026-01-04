@@ -64,4 +64,12 @@ export const authRoute = async (fastify: FastifyInstance) => {
       reply.status(200).setCookie('token', token, { httpOnly: true }).send({ token });
     }
   );
+
+  fastify.post(
+    '/auth/resend-verification-email',
+    { schema: authSchema.resendVerificationEmail() },
+    async (request: FastifyRequest<{ Body: { email: string } }>, reply: FastifyReply) => {
+      await authController.resendVerificationEmail(request, reply);
+    }
+  );
 };

@@ -62,6 +62,17 @@ class AuthController {
       throw error;
     }
   }
+
+  async resendVerificationEmail(req: FastifyRequest<{ Body: { email: string } }>, res: FastifyReply) {
+    try {
+      const { email } = req.body;
+      await AuthService.resendVerificationEmail(email);
+      res.status(200).send({ message: 'Verification email resent. Please check your email.' });
+    } catch (error: any) {
+      fastify.log.error(`ResendVerificationEmail Error: ${error instanceof Error ? error.message : String(error)}`);
+      throw error;
+    }
+  }
 }
 
 export { AuthController };
