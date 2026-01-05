@@ -69,7 +69,7 @@ class AuthService {
         const emailVerification = await db.select().from(emailVerifications).where(eq(emailVerifications.userId, candidate.id)).limit(1);
         if (emailVerification?.length === 0 || !emailVerification[0]) {
           const token = this.cryptoToken();
-          await mailSender({ to: candidate.email, name: candidate.name, token, type: 'confirmation' });
+          await mailSender({ to: candidate.email, name: candidate.name, token, type: 'emailConfirmation' });
           await db.insert(emailVerifications).values({
             userId: candidate.id,
             token,
@@ -84,7 +84,7 @@ class AuthService {
         }
         if (emailVerification[0] && emailVerification[0].expiresAt <= new Date()) {
           const token = this.cryptoToken();
-          await mailSender({ to: candidate.email, name: candidate.name, token, type: 'confirmation' });
+          await mailSender({ to: candidate.email, name: candidate.name, token, type: 'emailConfirmation' });
           await db
             .update(emailVerifications)
             .set({
@@ -108,7 +108,7 @@ class AuthService {
         throw new Error('Failed to create user');
       }
       const token = this.cryptoToken();
-      await mailSender({ to: newUser[0].email, name: newUser[0].name, token, type: 'confirmation' });
+      await mailSender({ to: newUser[0].email, name: newUser[0].name, token, type: 'emailConfirmation' });
       await db.insert(emailVerifications).values({
         userId: newUser[0].id,
         token,
@@ -134,14 +134,20 @@ class AuthService {
       if (emailVerification[0].expiresAt < new Date()) {
         throw ApiError.badRequest('Verification token has expired');
       }
-      await db
+      const user = await db
         .update(usersTable)
         .set({ isEmailVerified: true })
-        .where(eq(usersTable.id, emailVerification[0].userId));
+        .where(eq(usersTable.id, emailVerification[0].userId))
+        .returning();
+      if (user?.length === 0 || !user[0]) {
+        throw ApiError.notFound('User not found');
+      }
       await db
         .update(emailVerifications)
         .set({ verifiedAt: new Date(), token: null })
         .where(eq(emailVerifications.userId, emailVerification[0].userId));
+      await mailSender({ to: user[0].email, name: user[0].name, type: 'welcome' });
+      
     } catch (error) {
       throw ApiError.badRequest(error instanceof Error ? error.message : 'Failed to verify email');
     }
@@ -157,7 +163,7 @@ class AuthService {
         throw ApiError.badRequest('Email is already verified');
       }
       const token = this.cryptoToken();
-      await mailSender({ to: user[0].email, name: user[0].name, token, type: 'confirmation' });
+      await mailSender({ to: user[0].email, name: user[0].name, token, type: 'emailConfirmation' });
       const emailVerification = await db.select().from(emailVerifications).where(eq(emailVerifications.userId, user[0].id)).limit(1);
       if (emailVerification?.length === 0 || !emailVerification[0]) {
         await db.insert(emailVerifications).values({

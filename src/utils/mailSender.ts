@@ -4,8 +4,8 @@ import Mailgun from 'mailgun.js';
 import { ApiError } from './apiError.ts';
 import { fastify } from '../server.ts';
 
-const emailTemplate = {
-  confirmation: (name: string, token: string) => `
+const emailTemplates = {
+  emailConfirmation: (name: string, token: string) => `
     <html>
       <body class="text-center">
         <h1>Congratulations ${name}!</h1>
@@ -25,9 +25,19 @@ const emailTemplate = {
       </body>
     </html>
   `,
+  welcome: (name: string) => `
+    <html>
+      <body class="text-center"></body>
+        <h1>Welcome to Our Platform, ${name}!</h1>
+        <p>We're excited to have you on board. Explore our features and enjoy your experience.</p>
+      </body>
+    </html>
+  `,
 }
 
-export async function mailSender({ to, name, token, type = 'confirmation' }: { to: string; name: string; token: string; type: 'confirmation' | 'passwordReset' }) {
+type EmailType = 'emailConfirmation' | 'passwordReset' | 'welcome';
+
+export async function mailSender({ to, name, token = '', type = 'emailConfirmation' }: { to: string; name: string; token?: string; type: EmailType }) {
   const mailgun = new Mailgun(FormData);
   const emailDomain = process.env.EMAIL_DOMAIN;
   const key = process.env.EMAIL_API_KEY;
@@ -50,7 +60,7 @@ export async function mailSender({ to, name, token, type = 'confirmation' }: { t
       from: 'Luckycat <info@luckycat.pp.ua>',
       to: [`${name} <${to}>`],
       subject: `Hello ${name}`,
-      html: emailTemplate[type](name, token),
+      html: emailTemplates[type](name, token),
     });
 
     fastify.log.info(`Email sent to ${to}: ${data.message}`);
