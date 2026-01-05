@@ -1,4 +1,6 @@
-export const loggerConfig = {
+import { ENVIRONMENTS } from './server.ts'
+
+export const loggerConfig: Record<typeof ENVIRONMENTS[number], boolean | object> = {
   development: {
     transport: {
       target: 'pino-pretty',

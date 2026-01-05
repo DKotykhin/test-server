@@ -1,23 +1,47 @@
 import Fastify, { type FastifyInstance } from 'fastify';
 import { drizzle } from 'drizzle-orm/node-postgres';
-import fastifySwagger from '@fastify/swagger';
-import fastifySwaggerUI from '@fastify/swagger-ui';
 import jwt from '@fastify/jwt';
 import cookie from '@fastify/cookie';
+import fastifyEnv from '@fastify/env';
+import fastifySwagger from '@fastify/swagger';
+import fastifySwaggerUI from '@fastify/swagger-ui';
 
 //routes
 import { healthRoute } from './routes/health.ts';
-import { userRoute } from './routes/user.ts';
 import { authRoute } from './routes/auth.ts';
+import { userRoute } from './routes/user.ts';
 
+// other imports
 import { loggerConfig } from './configs.ts';
 import { errorHandler } from './utils/errorHandler.ts';
 
-import 'dotenv/config';
+// Define environment variables schema
+const schema = {
+  type: 'object',
+  required: ['DB_URL', 'JWT_SECRET', 'EMAIL_API_KEY', 'EMAIL_DOMAIN'],
+  properties: {
+    DB_URL: { type: 'string' },
+    JWT_SECRET: { type: 'string' },
+    EMAIL_API_KEY: { type: 'string' },
+    EMAIL_DOMAIN: { type: 'string' },
+    JWT_EXPIRES_IN: { type: 'string', default: '1d' },
+    PORT: { type: 'string', default: '4004' },
+    NODE_ENV: { type: 'string', default: 'development' },
+    FRONT_URL: { type: 'string', default: 'http://localhost:3000' },
+  },
+} as const;
 
+// register fastify-env plugin
+await Fastify().register(fastifyEnv, {
+  schema,
+  dotenv: true,
+  data: process.env,
+});
+
+export const ENVIRONMENTS = ['development', 'production', 'test'];
 const PORT = process.env.PORT || 4004;
-const NODE_ENV: 'development' | 'production' | 'test' = ['development', 'production', 'test'].includes(process.env.NODE_ENV || '')
-  ? (process.env.NODE_ENV as 'development' | 'production' | 'test')
+const NODE_ENV: (typeof ENVIRONMENTS)[number] = ENVIRONMENTS.includes(process.env.NODE_ENV || '')
+  ? (process.env.NODE_ENV as (typeof ENVIRONMENTS)[number])
   : 'development';
 
 // Initialize Postgres connection
@@ -25,7 +49,7 @@ export const db = drizzle(process.env.DB_URL!);
 
 // Create Fastify instance
 export const fastify: FastifyInstance = Fastify({
-  logger: loggerConfig[NODE_ENV] ?? true,
+  logger: loggerConfig[NODE_ENV as keyof typeof loggerConfig] ?? true,
   disableRequestLogging: NODE_ENV === 'development',
   ajv: {
     customOptions: {
@@ -64,10 +88,20 @@ await fastify.register(jwt, {
 await fastify.register(fastifySwagger, {
   openapi: {
     info: {
-      title: 'My API',
+      title: 'My Test API',
       description: 'Fastify Swagger API',
       version: '1.0.0',
     },
+    components: {
+      securitySchemes: {
+        BearerAuth: {
+          type: 'http',
+          scheme: 'bearer',
+          bearerFormat: 'JWT',
+        },
+      },
+    },
+    security: [{ BearerAuth: [] }],
   },
 });
 
@@ -82,8 +116,8 @@ await fastify.register(fastifySwaggerUI, {
 
 //Register routes
 fastify.register(healthRoute);
-fastify.register(userRoute);
 fastify.register(authRoute);
+fastify.register(userRoute);
 
 //Global error handler
 fastify.register(async (instance) => {
