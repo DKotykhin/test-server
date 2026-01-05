@@ -23,9 +23,10 @@ export type NewUser = InferInsertModel<typeof usersTable>;
 export const resetPassword = pgTable("reset_password", {
   id: uuid().primaryKey().defaultRandom(),
   userId: uuid().notNull().references(() => usersTable.id, { onDelete: 'cascade' }),
-  token: varchar({ length: 512 }).notNull().unique(),
+  token: varchar({ length: 512 }),
   expiresAt: timestamp('expires_at').notNull(),
   createdAt: timestamp('created_at').notNull().defaultNow(),
+  changedAt: timestamp('changed_at'),
 });
 
 export const resetPasswordRelations = relations(usersTable, ({ one }) => ({

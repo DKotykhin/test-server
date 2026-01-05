@@ -113,6 +113,55 @@ class AuthSchema {
       },
     };
   }
+
+  requestPasswordReset() {
+    return {
+      summary: 'Request password reset',
+      description: 'Send a password reset email to the user',
+      tags: ['Auth'],
+      body: {
+        type: 'object',
+        properties: {
+          email: { type: 'string', format: 'email' },
+        },
+        required: ['email'],
+        additionalProperties: false,
+      },
+      response: {
+        200: {
+          type: 'object',
+          properties: {
+            message: { type: 'string' },
+          },
+        },
+      },
+    };
+  }
+
+  setNewPassword() {
+    return {
+      summary: 'Set new password',
+      description: 'Set a new password using the password reset token',
+      tags: ['Auth'],
+      body: {
+        type: 'object',
+        properties: {
+          token: { type: 'string' },
+          password: { type: 'string', minLength: 6 },
+        },
+        required: ['token', 'password'],
+        additionalProperties: false,
+      },
+      response: {
+        200: {
+          type: 'object',
+          properties: {
+            message: { type: 'string' },
+          },
+        },
+      },
+    };
+  }
 }
 
 export { AuthSchema };

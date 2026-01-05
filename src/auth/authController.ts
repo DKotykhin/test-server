@@ -73,6 +73,28 @@ class AuthController {
       throw error;
     }
   }
+
+  async requestPasswordReset(req: FastifyRequest<{ Body: { email: string } }>, res: FastifyReply) {
+    try {
+      const { email } = req.body;
+      await AuthService.requestPasswordReset(email);
+      res.status(200).send({ message: 'Password reset email sent. Please check your email.' });
+    } catch (error: any) {
+      fastify.log.error(`RequestPasswordReset Error: ${error instanceof Error ? error.message : String(error)}`);
+      throw error;
+    }
+  }
+
+  async setNewPassword(req: FastifyRequest<{ Body: { token: string; password: string } }>, res: FastifyReply) {
+    try {
+      const { token, password } = req.body;
+      await AuthService.setNewPassword(token, password);
+      res.status(200).send({ message: 'New password set successfully' });
+    } catch (error: any) {
+      fastify.log.error(`SetNewPassword Error: ${error instanceof Error ? error.message : String(error)}`);
+      throw error;
+    }
+  }
 }
 
 export { AuthController };

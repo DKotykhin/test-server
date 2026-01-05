@@ -3,7 +3,7 @@ import * as crypto from 'crypto';
 
 import { db } from '../server.js';
 import { ApiError, mailSender, PasswordHash } from '../utils/_index.ts';
-import { emailVerifications, usersTable, type User } from '../db/schema/users.js';
+import { emailVerifications, resetPassword, usersTable, type User } from '../db/schema/users.js';
 import type { UserCreate } from './authTypes.ts';
 
 class AuthService {
@@ -69,7 +69,7 @@ class AuthService {
         const emailVerification = await db.select().from(emailVerifications).where(eq(emailVerifications.userId, candidate.id)).limit(1);
         if (emailVerification?.length === 0 || !emailVerification[0]) {
           const token = this.cryptoToken();
-          await mailSender({ to: candidate.email, name: candidate.name, token });
+          await mailSender({ to: candidate.email, name: candidate.name, token, type: 'confirmation' });
           await db.insert(emailVerifications).values({
             userId: candidate.id,
             token,
@@ -84,7 +84,7 @@ class AuthService {
         }
         if (emailVerification[0] && emailVerification[0].expiresAt <= new Date()) {
           const token = this.cryptoToken();
-          await mailSender({ to: candidate.email, name: candidate.name, token });
+          await mailSender({ to: candidate.email, name: candidate.name, token, type: 'confirmation' });
           await db
             .update(emailVerifications)
             .set({
@@ -108,7 +108,7 @@ class AuthService {
         throw new Error('Failed to create user');
       }
       const token = this.cryptoToken();
-      await mailSender({ to: newUser[0].email, name: newUser[0].name, token });
+      await mailSender({ to: newUser[0].email, name: newUser[0].name, token, type: 'confirmation' });
       await db.insert(emailVerifications).values({
         userId: newUser[0].id,
         token,
@@ -157,7 +157,7 @@ class AuthService {
         throw ApiError.badRequest('Email is already verified');
       }
       const token = this.cryptoToken();
-      await mailSender({ to: user[0].email, name: user[0].name, token });
+      await mailSender({ to: user[0].email, name: user[0].name, token, type: 'confirmation' });
       const emailVerification = await db.select().from(emailVerifications).where(eq(emailVerifications.userId, user[0].id)).limit(1);
       if (emailVerification?.length === 0 || !emailVerification[0]) {
         await db.insert(emailVerifications).values({
@@ -176,6 +176,76 @@ class AuthService {
       }
     } catch (error) {
       throw ApiError.badRequest(error instanceof Error ? error.message : 'Failed to resend verification email');
+    }
+  }
+
+  static async requestPasswordReset(email: string): Promise<void> {
+    try {
+      const user = await db.select().from(usersTable).where(eq(usersTable.email, email)).limit(1);
+      if (user?.length === 0 || !user[0]) {
+        throw ApiError.notFound('User with this email does not exist');
+      }
+      if (!user[0].isEmailVerified) {
+        throw ApiError.badRequest('Email is not verified');
+      }
+      const token = this.cryptoToken();
+      await mailSender({ to: user[0].email, name: user[0].name, token, type: 'passwordReset' });
+      const resetPasswordRecord = await db.select().from(resetPassword).where(eq(resetPassword.userId, user[0].id)).limit(1);
+      if (resetPasswordRecord?.length === 0 || !resetPasswordRecord[0]) {
+        await db.insert(resetPassword).values({
+          userId: user[0].id,
+          token,
+          expiresAt: new Date(Date.now() + 60 * 60 * 1000), // 1 hour expiration
+        });
+      } else {
+        await db
+          .update(resetPassword)
+          .set({
+            token,
+            expiresAt: new Date(Date.now() + 60 * 60 * 1000), // 1 hour expiration
+          })
+          .where(eq(resetPassword.userId, user[0].id));
+      }
+    } catch (error) {
+      throw ApiError.badRequest(error instanceof Error ? error.message : 'Failed to reset password');
+    }
+  }
+
+  static async setNewPassword(token: string, password: string): Promise<void> {
+    try {
+      const resetPasswordRecord = await db
+        .select()
+        .from(resetPassword)
+        .where(eq(resetPassword.token, token.trim()))
+        .limit(1);
+      if (resetPasswordRecord?.length === 0 || !resetPasswordRecord[0]) {
+        throw ApiError.badRequest('Invalid or expired password reset token');
+      }
+      if (resetPasswordRecord[0].expiresAt < new Date()) {
+        throw ApiError.badRequest('Password reset token has expired. Please request a new password reset.');
+      }
+      const user = await db.select().from(usersTable).where(eq(usersTable.id, resetPasswordRecord[0].userId)).limit(1);
+      if (user?.length === 0 || !user[0]) {
+        throw ApiError.notFound('User not found');
+      }
+      if (!user[0].isEmailVerified) {
+        throw ApiError.badRequest('Email is not verified');
+      }
+      const isSame = await PasswordHash.comparePassword(password, user[0].passwordHash || '');
+      if (isSame) {
+        throw ApiError.badRequest('New password must be different from the old password');
+      }
+      const hashedPassword = await PasswordHash.hashPassword(password);
+      await db
+        .update(usersTable)
+        .set({ passwordHash: hashedPassword })
+        .where(eq(usersTable.id, resetPasswordRecord[0].userId));
+      await db
+        .update(resetPassword)
+        .set({ token: null, changedAt: new Date() })
+        .where(eq(resetPassword.userId, resetPasswordRecord[0].userId));
+    } catch (error) {
+      throw ApiError.badRequest(error instanceof Error ? error.message : 'Failed to update password');
     }
   }
 }

@@ -72,4 +72,20 @@ export const authRoute = async (fastify: FastifyInstance) => {
       await authController.resendVerificationEmail(request, reply);
     }
   );
+
+  fastify.post(
+    '/auth/request-password-reset',
+    { schema: authSchema.requestPasswordReset() },
+    async (request: FastifyRequest<{ Body: { email: string } }>, reply: FastifyReply) => {
+      await authController.requestPasswordReset(request, reply);
+    }
+  );
+
+  fastify.post(
+    '/auth/set-new-password',
+    { schema: authSchema.setNewPassword() },
+    async (request: FastifyRequest<{ Body: { token: string; password: string } }>, reply: FastifyReply) => {
+      await authController.setNewPassword(request, reply);
+    }
+  );
 };

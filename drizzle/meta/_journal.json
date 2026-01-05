@@ -22,6 +22,13 @@
       "when": 1767461390457,
       "tag": "0002_nappy_eddie_brock",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1767621628238,
+      "tag": "0003_fast_ultimatum",
+      "breakpoints": true
     }
   ]
 }
