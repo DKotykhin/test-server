@@ -1,5 +1,5 @@
 {
-  "id": "abe2da3c-45ed-4733-891b-57d8c1292a43",
+  "id": "59fc77f6-3b46-477d-8a4d-d1d170fa1eca",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -15,8 +15,8 @@
           "notNull": true,
           "default": "gen_random_uuid()"
         },
-        "userId": {
-          "name": "userId",
+        "user_id": {
+          "name": "user_id",
           "type": "uuid",
           "primaryKey": false,
           "notNull": true
@@ -25,7 +25,7 @@
           "name": "token",
           "type": "varchar(512)",
           "primaryKey": false,
-          "notNull": true
+          "notNull": false
         },
         "expires_at": {
           "name": "expires_at",
@@ -39,16 +39,22 @@
           "primaryKey": false,
           "notNull": true,
           "default": "now()"
+        },
+        "verified_at": {
+          "name": "verified_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false
         }
       },
       "indexes": {},
       "foreignKeys": {
-        "email_verifications_userId_users_id_fk": {
-          "name": "email_verifications_userId_users_id_fk",
+        "email_verifications_user_id_users_id_fk": {
+          "name": "email_verifications_user_id_users_id_fk",
           "tableFrom": "email_verifications",
           "tableTo": "users",
           "columnsFrom": [
-            "userId"
+            "user_id"
           ],
           "columnsTo": [
             "id"
@@ -58,15 +64,7 @@
         }
       },
       "compositePrimaryKeys": {},
-      "uniqueConstraints": {
-        "email_verifications_token_unique": {
-          "name": "email_verifications_token_unique",
-          "nullsNotDistinct": false,
-          "columns": [
-            "token"
-          ]
-        }
-      },
+      "uniqueConstraints": {},
       "policies": {},
       "checkConstraints": {},
       "isRLSEnabled": false
@@ -82,8 +80,8 @@
           "notNull": true,
           "default": "gen_random_uuid()"
         },
-        "userId": {
-          "name": "userId",
+        "user_id": {
+          "name": "user_id",
           "type": "uuid",
           "primaryKey": false,
           "notNull": true
@@ -92,7 +90,7 @@
           "name": "token",
           "type": "varchar(512)",
           "primaryKey": false,
-          "notNull": true
+          "notNull": false
         },
         "expires_at": {
           "name": "expires_at",
@@ -106,16 +104,22 @@
           "primaryKey": false,
           "notNull": true,
           "default": "now()"
+        },
+        "changed_at": {
+          "name": "changed_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false
         }
       },
       "indexes": {},
       "foreignKeys": {
-        "reset_password_userId_users_id_fk": {
-          "name": "reset_password_userId_users_id_fk",
+        "reset_password_user_id_users_id_fk": {
+          "name": "reset_password_user_id_users_id_fk",
           "tableFrom": "reset_password",
           "tableTo": "users",
           "columnsFrom": [
-            "userId"
+            "user_id"
           ],
           "columnsTo": [
             "id"
@@ -125,15 +129,7 @@
         }
       },
       "compositePrimaryKeys": {},
-      "uniqueConstraints": {
-        "reset_password_token_unique": {
-          "name": "reset_password_token_unique",
-          "nullsNotDistinct": false,
-          "columns": [
-            "token"
-          ]
-        }
-      },
+      "uniqueConstraints": {},
       "policies": {},
       "checkConstraints": {},
       "isRLSEnabled": false
@@ -161,24 +157,56 @@
           "primaryKey": false,
           "notNull": true
         },
-        "avatarUrl": {
-          "name": "avatarUrl",
+        "role": {
+          "name": "role",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'user'"
+        },
+        "avatar_url": {
+          "name": "avatar_url",
           "type": "varchar(512)",
           "primaryKey": false,
           "notNull": false
         },
-        "passwordHash": {
-          "name": "passwordHash",
+        "password_hash": {
+          "name": "password_hash",
           "type": "varchar(512)",
           "primaryKey": false,
           "notNull": false
         },
-        "isEmailVerified": {
-          "name": "isEmailVerified",
+        "is_email_verified": {
+          "name": "is_email_verified",
           "type": "boolean",
           "primaryKey": false,
           "notNull": true,
           "default": false
+        },
+        "last_login_at": {
+          "name": "last_login_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "is_banned": {
+          "name": "is_banned",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "ban_reason": {
+          "name": "ban_reason",
+          "type": "varchar(1024)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "banned_at": {
+          "name": "banned_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false
         },
         "created_at": {
           "name": "created_at",

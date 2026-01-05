@@ -8,10 +8,14 @@ export const usersTable = pgTable("users", {
   id: uuid().primaryKey().defaultRandom(),
   name: varchar({ length: 255 }).notNull(),
   email: varchar({ length: 255 }).notNull().unique(),
-  role: varchar({ length: 50 }).notNull().default('user'),
-  avatarUrl: varchar({ length: 512  }),
-  passwordHash: varchar({ length: 512 }),
-  isEmailVerified: boolean().notNull().default(false),
+  role: varchar({ enum: userRoles }).notNull().default('user'),
+  avatarUrl: varchar('avatar_url', { length: 512  }),
+  passwordHash: varchar('password_hash', { length: 512 }),
+  isEmailVerified: boolean('is_email_verified').notNull().default(false),
+  lastLoginAt: timestamp('last_login_at'),
+  isBanned: boolean('is_banned').notNull().default(false),
+  banReason: varchar('ban_reason', { length: 1024 }),
+  bannedAt: timestamp('banned_at'),
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
 });
@@ -22,7 +26,7 @@ export type NewUser = InferInsertModel<typeof usersTable>;
 // Password reset tokens table definition
 export const resetPassword = pgTable("reset_password", {
   id: uuid().primaryKey().defaultRandom(),
-  userId: uuid().notNull().references(() => usersTable.id, { onDelete: 'cascade' }),
+  userId: uuid('user_id').notNull().references(() => usersTable.id, { onDelete: 'cascade' }),
   token: varchar({ length: 512 }),
   expiresAt: timestamp('expires_at').notNull(),
   createdAt: timestamp('created_at').notNull().defaultNow(),
@@ -39,7 +43,7 @@ export type NewResetPassword = InferInsertModel<typeof resetPassword>;
 // Email verifications table definition
 export const emailVerifications = pgTable("email_verifications", {
   id: uuid().primaryKey().defaultRandom(),
-  userId: uuid().notNull().references(() => usersTable.id, { onDelete: 'cascade' }),
+  userId: uuid('user_id').notNull().references(() => usersTable.id, { onDelete: 'cascade' }),
   token: varchar({ length: 512 }),
   expiresAt: timestamp('expires_at').notNull(),
   createdAt: timestamp('created_at').notNull().defaultNow(),

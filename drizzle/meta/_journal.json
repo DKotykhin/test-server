@@ -5,29 +5,8 @@
     {
       "idx": 0,
       "version": "7",
-      "when": 1766788649516,
-      "tag": "0000_silky_ezekiel",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "7",
-      "when": 1766789370901,
-      "tag": "0001_calm_ozymandias",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "7",
-      "when": 1767461390457,
-      "tag": "0002_nappy_eddie_brock",
-      "breakpoints": true
-    },
-    {
-      "idx": 3,
-      "version": "7",
-      "when": 1767621628238,
-      "tag": "0003_fast_ultimatum",
+      "when": 1767631721428,
+      "tag": "0000_sturdy_luke_cage",
       "breakpoints": true
     }
   ]

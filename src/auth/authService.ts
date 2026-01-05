@@ -50,6 +50,10 @@ class AuthService {
       if (!isPasswordValid) {
         throw ApiError.unauthorized('Invalid email or password');
       }
+      await db
+        .update(usersTable)
+        .set({ lastLoginAt: new Date() })
+        .where(eq(usersTable.id, user[0].id));
       return user[0];
     } catch (error) {
       if (error instanceof ApiError) {
