@@ -5,5 +5,5 @@ export interface UserCreate {
   email: string;
   password: string;
   avatarUrl?: string;
-  role: typeof userRoles[number];
+  role?: typeof userRoles[number];
 }

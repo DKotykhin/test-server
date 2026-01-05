@@ -10,6 +10,7 @@ import fastifySwaggerUI from '@fastify/swagger-ui';
 import { healthRoute } from './routes/health.ts';
 import { authRoute } from './routes/auth.ts';
 import { userRoute } from './routes/user.ts';
+import { menuRoute } from './routes/menu.ts';
 
 // other imports
 import { loggerConfig } from './configs.ts';
@@ -118,6 +119,7 @@ await fastify.register(fastifySwaggerUI, {
 fastify.register(healthRoute);
 fastify.register(authRoute);
 fastify.register(userRoute);
+fastify.register(menuRoute);
 
 //Global error handler
 fastify.register(async (instance) => {
