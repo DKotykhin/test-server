@@ -1,11 +1,16 @@
 import { asc, eq } from 'drizzle-orm';
 
-import { db } from '../server.js';
+import { db, fastify } from '../server.js';
 import { ApiError } from '../utils/_index.ts';
 import { menuCategoriesTable, languages, menuItemsTable } from '../db/schema/menu.ts';
 
 class MenuService {
   static async getMenuByLanguage(language: (typeof languages)[number] = 'EN') {
+    const cachedMenu = await fastify.redis.get(`menu:${language}`);
+    if (cachedMenu) {
+      return JSON.parse(cachedMenu);
+    }
+    
     const menu = await db
       .select()
       .from(menuCategoriesTable)
@@ -33,7 +38,11 @@ class MenuService {
       }
     }
 
-    return Array.from(map.values());
+    const menuList = Array.from(map.values());
+
+    await fastify.redis.set(`menu:${language}`, JSON.stringify(menuList), 'EX', 1 * 60); // Cache for 1 minute
+
+    return menuList;
   }
 }
 

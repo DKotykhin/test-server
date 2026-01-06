@@ -5,6 +5,7 @@ import cookie from '@fastify/cookie';
 import fastifyEnv from '@fastify/env';
 import fastifySwagger from '@fastify/swagger';
 import fastifySwaggerUI from '@fastify/swagger-ui';
+import fastifyRedis from '@fastify/redis';
 
 //routes
 import { healthRoute } from './routes/health.ts';
@@ -19,9 +20,10 @@ import { errorHandler } from './utils/errorHandler.ts';
 // Define environment variables schema
 const schema = {
   type: 'object',
-  required: ['DB_URL', 'JWT_SECRET', 'EMAIL_API_KEY', 'EMAIL_DOMAIN'],
+  required: ['DB_URL', 'REDIS_URL', 'JWT_SECRET', 'EMAIL_API_KEY', 'EMAIL_DOMAIN'],
   properties: {
     DB_URL: { type: 'string' },
+    REDIS_URL: { type: 'string' },
     JWT_SECRET: { type: 'string' },
     EMAIL_API_KEY: { type: 'string' },
     EMAIL_DOMAIN: { type: 'string' },
@@ -60,14 +62,30 @@ export const fastify: FastifyInstance = Fastify({
   },
 });
 
-// check db connection
+// Register Redis plugin
+await fastify.register(fastifyRedis, {
+  url: process.env.REDIS_URL!,
+});
+
+// check Redis db connection
+fastify.addHook('onReady', async () => {
+  try {
+    await fastify.redis.ping();
+    fastify.log.info('Redis DB connection established successfully.');
+  } catch (error) {
+    fastify.log.error(error instanceof Error ? error.message : 'Failed to connect to Redis');
+    process.exit(1);
+  }
+});
+
+// check Postgres db connection
 fastify.addHook('onReady', async () => {
   try {
     if (!process.env.DB_URL) {
       throw new Error('DB_URL is not defined in environment variables');
     }
     await db.execute(`SELECT 1`);
-    fastify.log.info('Database connection established successfully.');
+    fastify.log.info('Postgres DB connection established successfully.');
   } catch (error) {
     fastify.log.error(error instanceof Error ? error.message : 'Failed to connect to the database');
     process.exit(1);
