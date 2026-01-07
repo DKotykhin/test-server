@@ -2,6 +2,7 @@ import { eq } from 'drizzle-orm';
 import * as crypto from 'crypto';
 
 import { db } from '../server.js';
+import { queue } from '../utils/queue.ts';
 import { ApiError, mailSender, PasswordHash } from '../utils/_index.ts';
 import { emailVerifications, resetPassword, usersTable, type User } from '../db/schema/users.js';
 import type { UserCreate } from './authTypes.ts';
@@ -127,6 +128,7 @@ class AuthService {
 
   static async verifyEmail(token: string): Promise<void> {
     try {
+      // Find the email verification record by token
       const emailVerification = await db
         .select()
         .from(emailVerifications)
@@ -138,6 +140,7 @@ class AuthService {
       if (emailVerification[0].expiresAt < new Date()) {
         throw ApiError.badRequest('Verification token has expired');
       }
+      // Update the user's isEmailVerified status
       const user = await db
         .update(usersTable)
         .set({ isEmailVerified: true })
@@ -146,11 +149,18 @@ class AuthService {
       if (user?.length === 0 || !user[0]) {
         throw ApiError.notFound('User not found');
       }
+      // Update the email verification record
       await db
         .update(emailVerifications)
         .set({ verifiedAt: new Date(), token: null })
         .where(eq(emailVerifications.userId, emailVerification[0].userId));
-      await mailSender({ to: user[0].email, name: user[0].name, type: 'welcome' });
+      
+      // Add job to send welcome email
+      queue('sendWelcomeEmail').add('sendWelcomeEmail', {
+        to: user[0].email,
+        name: user[0].name,
+        type: 'welcome'
+      });
       
     } catch (error) {
       throw ApiError.badRequest(error instanceof Error ? error.message : 'Failed to verify email');
