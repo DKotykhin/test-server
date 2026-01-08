@@ -20,7 +20,10 @@ export const healthRoute = async (fastify: FastifyInstance) => {
       },
     },
     function healthHandler() {
-      return { status: 'ok' };
+      return { 
+        status: 'ok',
+        timestamp: new Date().toISOString() 
+      };
     }
   );
   // fastify.route({
@@ -71,7 +74,10 @@ export const healthRoute = async (fastify: FastifyInstance) => {
       try {
         const client = fastify.redis;
         await client.ping();
-        return { status: 'ok' };
+        return { 
+          status: 'ok',
+          timestamp: new Date().toISOString() 
+        };
       } catch (error) {
         fastify.log.error(error, 'Redis health check failed');
         throw ApiError.internal('Redis connection failed');
