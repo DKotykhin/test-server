@@ -1,7 +1,7 @@
 import * as bcrypt from 'bcryptjs';
 
 export class PasswordHash {
-  private static index = 5;
+  private static readonly index = 5;
 
   static async hashPassword(password: string): Promise<string> {
     const salt = await bcrypt.genSalt(this.index);
